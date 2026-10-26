@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>אלופי האיות באנגלית - הכנה להכתבה</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Canvas Confetti for celebratory particle effects -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- Google Fonts: Rubik & Fredoka for playful typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Rubik:wght@400;600;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      font-family: 'Rubik', sans-serif;
+      user-select: none;
+    }
+    .font-eng {
+      font-family: 'Fredoka', cursive, sans-serif;
+    }
+    /* Playful bouncy keyframe animations */
+    @keyframes bounce-short {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    .animate-bounce-short {
+      animation: bounce-short 0.4s ease-in-out;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+    .shake-anim {
+      animation: shake 0.45s ease-in-out;
+    }
+    @keyframes popIn {
+      0% { transform: scale(0.7); opacity: 0; }
+      70% { transform: scale(1.08); opacity: 1; }
+      100% { transform: scale(1); }
+    }
+    .pop-in {
+      animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    /* Subtle custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 min-h-screen text-slate-800 flex flex-col items-center justify-between p-3 sm:p-6">
+
+  <!-- Top Navigation & Stats Bar -->
+  <header class="w-full max-w-2xl bg-white/95 backdrop-blur-md rounded-3xl shadow-xl px-5 py-3.5 mb-4 border-2 border-white/60">
+    <div class="flex items-center justify-between gap-3">
+      <!-- Title & Word count -->
+      <div class="flex items-center gap-2">
+        <span class="text-3xl">🏆</span>
+        <div>
+          <h1 class="text-lg sm:text-xl font-extrabold text-indigo-900 leading-tight">אלופי האיות לכיתה ה'</h1>
+          <p id="progress-text" class="text-xs font-semibold text-indigo-600">מילה 1 מתוך 12</p>
+        </div>
+      </div>
+
+      <!-- Live score badges -->
+      <div class="flex items-center gap-2">
+        <!-- Streak -->
+        <div class="bg-amber-100 border border-amber-300 px-3 py-1 rounded-2xl flex items-center gap-1 shadow-sm">
+          <span class="text-base">🔥</span>
+          <span id="streak-display" class="font-extrabold text-amber-800 text-sm">0</span>
+        </div>
+        <!-- Stars count -->
+        <div class="bg-yellow-100 border border-yellow-300 px-3 py-1 rounded-2xl flex items-center gap-1 shadow-sm">
+          <span class="text-base">⭐</span>
+          <span id="stars-display" class="font-black text-yellow-800 text-sm">0</span>
+        </div>
+        <!-- Points -->
+        <div class="bg-emerald-100 border border-emerald-300 px-3.5 py-1 rounded-2xl flex items-center gap-1 shadow-sm">
+          <span class="text-base">🎯</span>
+          <span id="score-display" class="font-black text-emerald-800 text-sm">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="w-full bg-slate-200 h-2.5 rounded-full mt-3 overflow-hidden p-0.5">
+      <div id="progress-bar-fill" class="bg-gradient-to-r from-emerald-400 to-teal-500 h-full rounded-full transition-all duration-300" style="width: 8%;"></div>
+    </div>
+  </header>
+
+  <!-- Main Game Card Area -->
+  <main class="w-full max-w-2xl flex-1 flex flex-col justify-center">
+
+    <!-- Mode Selector Tabs -->
+    <div class="flex justify-center gap-3 mb-3">
+      <button id="mode-type-btn" onclick="setMode('type')" class="px-5 py-2 rounded-2xl text-sm font-bold shadow-md transition-all border-2 bg-white text-indigo-700 border-indigo-400 scale-105">
+        ✍️ כתיבה והכתבה
+      </button>
+      <button id="mode-scramble-btn" onclick="setMode('scramble')" class="px-5 py-2 rounded-2xl text-sm font-bold shadow-md transition-all border-2 bg-white/70 text-slate-700 border-transparent hover:bg-white">
+        🧩 בניית מילה (אותיות)
+      </button>
+    </div>
+
+    <!-- Active Question Card -->
+    <div id="game-card" class="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 border-4 border-white/80 pop-in text-center relative overflow-hidden">
+
+      <!-- Badge displaying Hebrew prompt -->
+      <div class="inline-block bg-indigo-50 border-2 border-indigo-200 px-4 py-1.5 rounded-2xl text-xs sm:text-sm font-bold text-indigo-700 mb-2">
+        איך אומרים וכותבים באנגלית:
+      </div>
+
+      <!-- Hebrew Word Presentation -->
+      <div id="hebrew-word" class="text-3xl sm:text-4xl font-black text-slate-800 my-2 tracking-wide">
+        ממתק
+      </div>
+
+      <!-- Audio Pronunciation Button -->
+      <div class="my-3 flex justify-center items-center gap-3">
+        <button id="speak-btn" onclick="pronounceWord()" class="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold px-5 py-2.5 rounded-2xl shadow-lg shadow-indigo-300 flex items-center gap-2 transition-transform cursor-pointer">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+          </svg>
+          <span class="text-sm sm:text-base">השמעת המילה 🔊</span>
+        </button>
+      </div>
+
+      <!-- MODE 1: Direct Typing Input -->
+      <div id="type-section" class="mt-4">
+        <div class="relative max-w-sm mx-auto">
+          <input 
+            type="text" 
+            id="word-input" 
+            dir="ltr"
+            autocomplete="off" 
+            autocorrect="off" 
+            autocapitalize="off" 
+            spellcheck="false"
+            placeholder="Type word here..."
+            class="font-eng text-2xl sm:text-3xl font-bold text-center tracking-widest w-full py-3.5 px-4 rounded-2xl border-3 border-indigo-300 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 outline-none transition-all shadow-inner uppercase"
+            onkeydown="handleKey(event)"
+          />
+        </div>
+        <p class="text-xs text-slate-400 mt-2 font-medium">אפשר ללחוץ Enter במקלדת כדי לבדוק</p>
+      </div>
+
+      <!-- MODE 2: Scrambled Letter Builder -->
+      <div id="scramble-section" class="hidden mt-4">
+        <!-- Built word slot display -->
+        <div id="built-word-display" dir="ltr" class="font-eng flex flex-wrap justify-center gap-2 min-h-[56px] p-2 bg-slate-50 border-2 border-dashed border-indigo-200 rounded-2xl mb-4 text-2xl font-black">
+          <!-- Filled via JS -->
+        </div>
+
+        <!-- Available scrambled letter tiles -->
+        <div id="scrambled-letters-bank" dir="ltr" class="flex flex-wrap justify-center gap-2">
+          <!-- Letter tiles injected dynamically -->
+        </div>
+
+        <div class="mt-3 flex justify-center gap-2">
+          <button onclick="clearBuiltWord()" class="px-3.5 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 text-xs font-bold rounded-xl transition">
+            🔄 איפוס אותיות
+          </button>
+        </div>
+      </div>
+
+      <!-- Hint and Helper Info Box -->
+      <div id="hint-box" class="hidden mt-4 p-3 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-sm font-semibold">
+        💡 רמז: <span id="hint-text" dir="ltr" class="font-eng font-bold tracking-widest"></span>
+      </div>
+
+      <!-- Feedback Banner (Correct / Mistake) -->
+      <div id="feedback-message" class="hidden mt-4 p-3 rounded-2xl text-base font-extrabold flex items-center justify-center gap-2">
+        <!-- Message text -->
+      </div>
+
+      <!-- Action Buttons Row -->
+      <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
+        <button id="hint-btn" onclick="provideHint()" class="bg-amber-100 hover:bg-amber-200 active:scale-95 text-amber-900 border border-amber-300 font-bold px-4 py-2.5 rounded-2xl text-sm flex items-center gap-1.5 transition">
+          <span>💡</span>
+          <span>צריך רמז?</span>
+        </button>
+
+        <button id="check-btn" onclick="submitAnswer()" class="bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-extrabold px-8 py-3 rounded-2xl text-base sm:text-lg shadow-lg shadow-emerald-200 transition-all flex items-center gap-2">
+          <span>בדיקה</span>
+          <span class="text-xl">🚀</span>
+        </button>
+
+        <button id="next-btn" onclick="nextWord()" class="hidden bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-extrabold px-8 py-3 rounded-2xl text-base sm:text-lg shadow-lg shadow-indigo-300 transition-all">
+          <span>המילה הבאה ➡️</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Final Results Celebration Screen (Hidden by default) -->
+    <div id="summary-card" class="hidden bg-white rounded-3xl shadow-2xl p-6 sm:p-10 border-4 border-white/80 pop-in text-center">
+      <div class="text-6xl sm:text-7xl mb-3 animate-bounce-short" id="summary-trophy">👑</div>
+      <h2 class="text-2xl sm:text-3xl font-black text-slate-800 mb-1" id="summary-title">כל הכבוד! סיימת את כל המילים!</h2>
+      <p class="text-slate-500 text-sm sm:text-base font-semibold mb-6">אתם מוכנים פיקס להכתבה באנגלית!</p>
+
+      <!-- Final statistics grid -->
+      <div class="grid grid-cols-3 gap-3 max-w-md mx-auto mb-6">
+        <div class="bg-indigo-50 border border-indigo-200 p-3 rounded-2xl">
+          <p class="text-xs text-indigo-600 font-bold">ציון כולל</p>
+          <p id="final-score" class="text-2xl sm:text-3xl font-black text-indigo-900">0</p>
+        </div>
+        <div class="bg-yellow-50 border border-yellow-200 p-3 rounded-2xl">
+          <p class="text-xs text-yellow-600 font-bold">כוכבים שצברת</p>
+          <div class="flex items-center justify-center gap-1">
+            <span class="text-yellow-500 text-xl">⭐</span>
+            <span id="final-stars" class="text-2xl sm:text-3xl font-black text-yellow-900">0</span>
+            <span class="text-xs text-yellow-600 font-bold">/ 36</span>
+          </div>
+        </div>
+        <div class="bg-emerald-50 border border-emerald-200 p-3 rounded-2xl">
+          <p class="text-xs text-emerald-600 font-bold">רצף שיא</p>
+          <p id="final-streak" class="text-2xl sm:text-3xl font-black text-emerald-900">0</p>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex flex-wrap justify-center gap-3">
+        <button onclick="restartGame(false)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold px-6 py-3 rounded-2xl shadow-lg shadow-indigo-300 transition text-sm sm:text-base">
+          🔄 לשחק שוב מחדש
+        </button>
+        <button id="retry-mistakes-btn" onclick="restartGame(true)" class="hidden bg-amber-500 hover:bg-amber-600 text-white font-extrabold px-6 py-3 rounded-2xl shadow-lg shadow-amber-200 transition text-sm sm:text-base">
+          🎯 תרגול רק של מה שטעיתי
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Word Reference List Modal Toggle Footer -->
+  <footer class="w-full max-w-2xl mt-4 flex items-center justify-between text-white/90 text-xs sm:text-sm font-semibold px-2">
+    <span>אוצר מילים מס' 4 (עמוד 42)</span>
+    <button onclick="toggleWordBank()" class="underline hover:text-white transition flex items-center gap-1 bg-white/20 px-3 py-1 rounded-xl">
+      📖 רשימת כל המילים
+    </button>
+  </footer>
+
+  <!-- Word Bank Modal popup -->
+  <div id="word-bank-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between border-b pb-3 mb-3">
+        <h3 class="text-lg font-bold text-indigo-900 flex items-center gap-2">
+          <span>📖</span> רשימת המילים להכתבה
+        </h3>
+        <button onclick="toggleWordBank()" class="text-slate-400 hover:text-slate-700 font-bold text-2xl leading-none">&times;</button>
+      </div>
+      <div class="overflow-y-auto flex-1 divide-y divide-slate-100" id="word-bank-list">
+        <!-- Rendered by JS -->
+      </div>
+      <div class="mt-4 pt-2 border-t text-center">
+        <button onclick="toggleWordBank()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl text-sm transition">
+          הבנתי, בואו נשחק!
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ========================================================
+       1. VOCABULARY DATA (From Grade 5 Unit Page 42)
+       ======================================================== */
+    const VOCABULARY = [
+      { id: 1, english: "Candy", hebrew: "ממתק" },
+      { id: 2, english: "date", hebrew: "תאריך" },
+      { id: 3, english: "do", hebrew: "לעשות" },
+      { id: 4, english: "everyone", hebrew: "כולם, כל אחד" },
+      { id: 5, english: "flour", hebrew: "קמח" },
+      { id: 6, english: "give", hebrew: "לתת" },
+      { id: 7, english: "July", hebrew: "יולי" },
+      { id: 8, english: "outside", hebrew: "בחוץ, החוצה" },
+      { id: 9, english: "ready", hebrew: "מוכן" },
+      { id: 10, english: "sweet", hebrew: "מתוק" },
+      { id: 11, english: "then", hebrew: "אז" },
+      { id: 12, english: "throw", hebrew: "לזרוק" }
+    ];
+
+    /* ========================================================
+       2. WEB AUDIO SYNTHESIZER SOUND EFFECTS
+       ======================================================== */
+    let audioCtx = null;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    // Play pleasant tones without external audio files
+    function playSound(type) {
+      try {
+        const ctx = getAudioContext();
+        const now = ctx.currentTime;
+
+        if (type === 'correct') {
+          // Cheerful chime (arpeggio: C5 -> E5 -> G5 -> C6)
+          const notes = [523.25, 659.25, 783.99, 1046.50];
+          notes.forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+            gain.gain.setValueAtTime(0.18, now + idx * 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.3);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + idx * 0.08);
+            osc.stop(now + idx * 0.08 + 0.35);
+          });
+        } else if (type === 'wrong') {
+          // Gentle buzzer (two low notes)
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(220, now);
+          osc.frequency.setValueAtTime(164.8, now + 0.15);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.45);
+        } else if (type === 'hint') {
+          // Gentle marimba 'pop'
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(440, now);
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.15);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.22);
+        } else if (type === 'victory') {
+          // Grand trumpet fanfare
+          const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+          notes.forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+            gain.gain.setValueAtTime(0.25, now + idx * 0.12);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.5);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + idx * 0.12);
+            osc.stop(now + idx * 0.12 + 0.55);
+          });
+        }
+      } catch (e) {
+        console.warn("Audio Context init pending user gesture.");
+      }
+    }
+
+    /* ========================================================
+       3. TEXT-TO-SPEECH (Native Web Speech API)
+       ======================================================== */
+    function pronounceWord() {
+      if (!currentWordObj) return;
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel(); // Cancel any existing speech
+        const utterance = new SpeechSynthesisUtterance(currentWordObj.english);
+        utterance.lang = 'en-US';
+        utterance.rate = 0.85; // Slightly slower for language learners
+        utterance.pitch = 1.05;
+        window.speechSynthesis.speak(utterance);
+      } else {
+        console.log("Speech synthesis not supported in this browser.");
+      }
+    }
+
+    /* ========================================================
+       4. GAME STATE VARIABLES
+       ======================================================== */
+    let playlist = [];
+    let currentIndex = 0;
+    let currentWordObj = null;
+    let currentMode = 'type'; // 'type' | 'scramble'
+    let score = 0;
+    let totalStars = 0;
+    let streak = 0;
+    let maxStreak = 0;
+    let hintsUsedForWord = 0;
+    let answeredCorrectly = false;
+    let wrongWordsList = [];
+    let builtLetters = []; // For scramble mode
+
+    /* ========================================================
+       5. INITIALIZATION & GAME LIFECYCLE
+       ======================================================== */
+    function shuffleArray(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function initGame(onlyMistakes = false) {
+      if (onlyMistakes && wrongWordsList.length > 0) {
+        playlist = shuffleArray(wrongWordsList);
+      } else {
+        playlist = shuffleArray(VOCABULARY);
+      }
+      
+      wrongWordsList = [];
+      currentIndex = 0;
+      score = 0;
+      totalStars = 0;
+      streak = 0;
+      maxStreak = 0;
+
+      updateStatsUI();
+
+      document.getElementById('summary-card').classList.add('hidden');
+      document.getElementById('game-card').classList.remove('hidden');
+
+      loadCurrentQuestion();
+    }
+
+    function loadCurrentQuestion() {
+      if (currentIndex >= playlist.length) {
+        finishGame();
+        return;
+      }
+
+      currentWordObj = playlist[currentIndex];
+      hintsUsedForWord = 0;
+      answeredCorrectly = false;
+      builtLetters = [];
+
+      // Reset feedback UI
+      const feedback = document.getElementById('feedback-message');
+      feedback.classList.add('hidden');
+      feedback.className = "hidden mt-4 p-3 rounded-2xl text-base font-extrabold flex items-center justify-center gap-2";
+
+      const hintBox = document.getElementById('hint-box');
+      hintBox.classList.add('hidden');
+
+      // Update question text
+      document.getElementById('hebrew-word').innerText = currentWordObj.hebrew;
+      document.getElementById('progress-text').innerText = `מילה ${currentIndex + 1} מתוך ${playlist.length}`;
+
+      const progressPercent = ((currentIndex + 1) / playlist.length) * 100;
+      document.getElementById('progress-bar-fill').style.width = `${progressPercent}%`;
+
+      // Reset inputs based on mode
+      const inputEl = document.getElementById('word-input');
+      inputEl.value = '';
+      inputEl.disabled = false;
+      inputEl.classList.remove('border-emerald-500', 'border-rose-500', 'bg-emerald-50', 'bg-rose-50');
+
+      // Setup Scramble mode
+      setupScrambleModeUI();
+
+      // Show Check button, hide Next button
+      document.getElementById('check-btn').classList.remove('hidden');
+      document.getElementById('next-btn').classList.add('hidden');
+
+      // Card animation
+      const card = document.getElementById('game-card');
+      card.classList.remove('pop-in');
+      void card.offsetWidth;
+      card.classList.add('pop-in');
+
+      // Focus input field if in typing mode
+      if (currentMode === 'type') {
+        setTimeout(() => inputEl.focus(), 150);
+      }
+
+      // Automatically pronounce once word is shown (after brief pause)
+      setTimeout(pronounceWord, 300);
+    }
+
+    function setMode(mode) {
+      currentMode = mode;
+      const typeBtn = document.getElementById('mode-type-btn');
+      const scrambleBtn = document.getElementById('mode-scramble-btn');
+      const typeSection = document.getElementById('type-section');
+      const scrambleSection = document.getElementById('scramble-section');
+
+      if (mode === 'type') {
+        typeBtn.className = "px-5 py-2 rounded-2xl text-sm font-bold shadow-md transition-all border-2 bg-white text-indigo-700 border-indigo-400 scale-105";
+        scrambleBtn.className = "px-5 py-2 rounded-2xl text-sm font-bold shadow-md transition-all border-2 bg-white/70 text-slate-700 border-transparent hover:bg-white";
+        typeSection.classList.remove('hidden');
+        scrambleSection.classList.add('hidden');
+        document.getElementById('word-input').focus();
+      } else {
+        scrambleBtn.className = "px-5 py-2 rounded-2xl text-sm font-bold shadow-md transition-all border-2 bg-white text-indigo-700 border-indigo-400 scale-105";
+        typeBtn.className = "px-5 py-2 rounded-2xl text-sm font-bold shadow-md transition-all border-2 bg-white/70 text-slate-700 border-transparent hover:bg-white";
+        typeSection.classList.add('hidden');
+        scrambleSection.classList.remove('hidden');
+        setupScrambleModeUI();
+      }
+    }
+
+    /* ========================================================
+       6. SCRAMBLE MODE SPECIFIC LOGIC
+       ======================================================== */
+    function setupScrambleModeUI() {
+      if (!currentWordObj) return;
+      const lettersBank = document.getElementById('scrambled-letters-bank');
+      lettersBank.innerHTML = '';
+      builtLetters = [];
+      updateBuiltDisplay();
+
+      const wordLetters = currentWordObj.english.toUpperCase().split('');
+      // Shuffle letters
+      let scrambled = shuffleArray(wordLetters);
+      // Guarantee it is not by chance the exact word if length > 1
+      if (scrambled.join('') === currentWordObj.english.toUpperCase() && scrambled.length > 1) {
+        scrambled.reverse();
+      }
+
+      scrambled.forEach((char, index) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.id = `tile-${index}`;
+        btn.innerText = char;
+        btn.className = "font-eng w-11 h-12 sm:w-13 sm:h-14 bg-indigo-50 border-2 border-indigo-300 hover:bg-indigo-600 hover:text-white text-indigo-900 font-extrabold text-xl sm:text-2xl rounded-2xl shadow-md transition active:scale-95";
+        btn.onclick = () => selectScrambleLetter(char, `tile-${index}`);
+        lettersBank.appendChild(btn);
+      });
+    }
+
+    function selectScrambleLetter(char, tileId) {
+      if (answeredCorrectly) return;
+      playSound('hint');
+      const tile = document.getElementById(tileId);
+      if (tile) {
+        tile.classList.add('opacity-30', 'pointer-events-none');
+      }
+      builtLetters.push({ char, tileId });
+      updateBuiltDisplay();
+    }
+
+    function removeLetterAt(index) {
+      if (answeredCorrectly) return;
+      const removed = builtLetters.splice(index, 1)[0];
+      if (removed && removed.tileId) {
+        const tile = document.getElementById(removed.tileId);
+        if (tile) {
+          tile.classList.remove('opacity-30', 'pointer-events-none');
+        }
+      }
+      updateBuiltDisplay();
+    }
+
+    function clearBuiltWord() {
+      if (answeredCorrectly) return;
+      builtLetters.forEach(item => {
+        const tile = document.getElementById(item.tileId);
+        if (tile) {
+          tile.classList.remove('opacity-30', 'pointer-events-none');
+        }
+      });
+      builtLetters = [];
+      updateBuiltDisplay();
+    }
+
+    function updateBuiltDisplay() {
+      const display = document.getElementById('built-word-display');
+      display.innerHTML = '';
+      if (builtLetters.length === 0) {
+        display.innerHTML = '<span class="text-slate-300 font-sans text-sm my-auto font-normal">לחצו על האותיות כדי להרכיב את המילה...</span>';
+        return;
+      }
+      builtLetters.forEach((item, index) => {
+        const span = document.createElement('span');
+        span.innerText = item.char;
+        span.className = "inline-flex items-center justify-center w-10 h-10 bg-indigo-600 text-white rounded-xl shadow cursor-pointer hover:bg-rose-500 transition";
+        span.title = "לחצו להסרה";
+        span.onclick = () => removeLetterAt(index);
+        display.appendChild(span);
+      });
+    }
+
+    /* ========================================================
+       7. HINTS & HELPERS
+       ======================================================== */
+    function provideHint() {
+      if (answeredCorrectly) return;
+      hintsUsedForWord++;
+      playSound('hint');
+      const hintBox = document.getElementById('hint-box');
+      const hintText = document.getElementById('hint-text');
+      hintBox.classList.remove('hidden');
+
+      const word = currentWordObj.english;
+
+      if (hintsUsedForWord === 1) {
+        // Hint 1: First letter and length
+        hintText.innerText = `${word[0].toUpperCase()}${" _ ".repeat(word.length - 1)} (${word.length} אותיות)`;
+      } else {
+        // Hint 2: First + Last letter
+        const middle = " _ ".repeat(Math.max(1, word.length - 2));
+        hintText.innerText = `${word[0].toUpperCase()}${middle}${word[word.length - 1].toUpperCase()}`;
+      }
+    }
+
+    /* ========================================================
+       8. SUBMISSION & EVALUATION
+       ======================================================== */
+    function handleKey(e) {
+      if (e.key === 'Enter') {
+        submitAnswer();
+      }
+    }
+
+    function submitAnswer() {
+      if (answeredCorrectly) return;
+
+      let userGuess = '';
+      if (currentMode === 'type') {
+        userGuess = document.getElementById('word-input').value.trim();
+      } else {
+        userGuess = builtLetters.map(i => i.char).join('');
+      }
+
+      if (!userGuess) {
+        triggerShake();
+        return;
+      }
+
+      const targetWord = currentWordObj.english;
+      // Case-insensitive comparison
+      const isMatch = userGuess.toLowerCase() === targetWord.toLowerCase();
+
+      const feedback = document.getElementById('feedback-message');
+      const inputEl = document.getElementById('word-input');
+
+      if (isMatch) {
+        // Correct Answer
+        answeredCorrectly = true;
+        streak++;
+        if (streak > maxStreak) maxStreak = streak;
+
+        // Calculate stars (3 stars max, reduced if hints used)
+        let starsEarned = Math.max(1, 3 - hintsUsedForWord);
+        totalStars += starsEarned;
+        score += (starsEarned * 10);
+
+        playSound('correct');
+        launchCelebrationConfetti();
+
+        feedback.className = "mt-4 p-3 rounded-2xl text-base font-extrabold flex items-center justify-center gap-2 bg-emerald-100 text-emerald-800 border-2 border-emerald-300 pop-in";
+        feedback.innerHTML = `
+          <span>🎉 מעולה! צדקתם בדיוק!</span>
+          <span dir="ltr" class="font-eng font-black text-xl text-emerald-700 tracking-wider underline">${targetWord}</span>
+          <span class="text-amber-500 font-bold ml-1">${"⭐".repeat(starsEarned)}</span>
+        `;
+        feedback.classList.remove('hidden');
+
+        if (currentMode === 'type') {
+          inputEl.disabled = true;
+          inputEl.classList.add('border-emerald-500', 'bg-emerald-50');
+        }
+
+        updateStatsUI();
+
+        // Switch to Next button
+        document.getElementById('check-btn').classList.add('hidden');
+        const nextBtn = document.getElementById('next-btn');
+        nextBtn.classList.remove('hidden');
+        nextBtn.focus();
+
+      } else {
+        // Mistake
+        streak = 0;
+        updateStatsUI();
+        playSound('wrong');
+        triggerShake();
+
+        if (!wrongWordsList.some(item => item.id === currentWordObj.id)) {
+          wrongWordsList.push(currentWordObj);
+        }
+
+        feedback.className = "mt-4 p-3 rounded-2xl text-sm sm:text-base font-extrabold flex flex-col items-center justify-center gap-1 bg-rose-100 text-rose-800 border-2 border-rose-300 pop-in";
+        feedback.innerHTML = `
+          <div>❌ כמעט! האיות הנכון הוא:</div>
+          <div dir="ltr" class="font-eng text-2xl font-black text-indigo-700 tracking-wider">${targetWord}</div>
+          <div class="text-xs text-rose-700 font-semibold">נסו שוב או עברו הלאה כדי לחזור עליה בסוף!</div>
+        `;
+        feedback.classList.remove('hidden');
+
+        if (currentMode === 'type') {
+          inputEl.classList.add('border-rose-400', 'bg-rose-50');
+          setTimeout(() => {
+            inputEl.classList.remove('border-rose-400', 'bg-rose-50');
+          }, 1500);
+        }
+
+        // Allow continuing even with error
+        document.getElementById('check-btn').classList.add('hidden');
+        document.getElementById('next-btn').classList.remove('hidden');
+      }
+    }
+
+    function triggerShake() {
+      const card = document.getElementById('game-card');
+      card.classList.remove('shake-anim');
+      void card.offsetWidth;
+      card.classList.add('shake-anim');
+    }
+
+    function nextWord() {
+      currentIndex++;
+      loadCurrentQuestion();
+    }
+
+    function updateStatsUI() {
+      document.getElementById('score-display').innerText = score;
+      document.getElementById('stars-display').innerText = totalStars;
+      document.getElementById('streak-display').innerText = streak;
+    }
+
+    /* ========================================================
+       9. CELEBRATION & COMPLETION
+       ======================================================== */
+    function launchCelebrationConfetti() {
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 50,
+          spread: 60,
+          origin: { y: 0.65 }
+        });
+      }
+    }
+
+    function finishGame() {
+      playSound('victory');
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 120,
+          spread: 100,
+          origin: { y: 0.5 }
+        });
+      }
+
+      document.getElementById('game-card').classList.add('hidden');
+      const summary = document.getElementById('summary-card');
+      summary.classList.remove('hidden');
+
+      document.getElementById('final-score').innerText = score;
+      document.getElementById('final-stars').innerText = totalStars;
+      document.getElementById('final-streak').innerText = maxStreak;
+
+      const trophy = document.getElementById('summary-trophy');
+      const title = document.getElementById('summary-title');
+      const retryBtn = document.getElementById('retry-mistakes-btn');
+
+      if (wrongWordsList.length === 0) {
+        trophy.innerText = "👑";
+        title.innerText = "מושלם! ציון 100 בהכתבה!";
+        retryBtn.classList.add('hidden');
+      } else {
+        trophy.innerText = "🌟";
+        title.innerText = "עבודה יפה מאד!";
+        retryBtn.classList.remove('hidden');
+        retryBtn.innerText = `🎯 תרגול ${wrongWordsList.length} מילים שהתקשית בהן`;
+      }
+    }
+
+    function restartGame(onlyMistakes = false) {
+      initGame(onlyMistakes);
+    }
+
+    /* ========================================================
+       10. WORD BANK POPUP
+       ======================================================== */
+    function populateWordBank() {
+      const list = document.getElementById('word-bank-list');
+      list.innerHTML = '';
+      VOCABULARY.forEach(item => {
+        const row = document.createElement('div');
+        row.className = "py-2.5 px-3 flex items-center justify-between hover:bg-indigo-50/50 rounded-xl transition";
+        row.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span class="font-eng font-bold text-lg text-indigo-700" dir="ltr">${item.english}</span>
+            <button onclick="speakDirect('${item.english}')" class="text-xs bg-slate-100 hover:bg-slate-200 p-1.5 rounded-lg">🔊</button>
+          </div>
+          <span class="text-sm font-semibold text-slate-700">${item.hebrew}</span>
+        `;
+        list.appendChild(row);
+      });
+    }
+
+    function speakDirect(word) {
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(word);
+        utterance.lang = 'en-US';
+        utterance.rate = 0.85;
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    function toggleWordBank() {
+      const modal = document.getElementById('word-bank-modal');
+      modal.classList.toggle('hidden');
+    }
+
+    // Start everything on window load
+    window.onload = function() {
+      populateWordBank();
+      initGame(false);
+    };
+  </script>
+</body>
+</html>
